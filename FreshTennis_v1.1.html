@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>https://freshtennis.netlify.app/</title>
+  <style>
+    /* --- 全体設定 --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    }
+
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+    }
+
+    /* --- ダッシュボードレイアウト --- */
+    .dashboard-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* --- サイドバー --- */
+    .sidebar {
+      width: 260px;
+      background-color: #1e293b;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+
+    .sidebar-brand {
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-menu {
+      flex-grow: 1;
+    }
+
+    .menu-item {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s;
+    }
+
+    .menu-item .icon {
+      margin-right: 10px;
+    }
+
+    .menu-item:hover,
+    .menu-item.active {
+      background-color: #334155;
+      color: #fff;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid #334155;
+      padding-top: 15px;
+    }
+
+    .user-info {
+      margin-bottom: 10px;
+    }
+
+    .user-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .role-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      color: white;
+      margin-top: 4px;
+    }
+
+    .role-badge.admin {
+      background-color: #ef4444;
+    }
+
+    .role-badge.member {
+      background-color: #0ea5e9;
+    }
+
+    .logout-btn {
+      width: 100%;
+      background-color: #334155;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .logout-btn.is-admin {
+      background-color: #475569;
+    }
+
+    /* --- メインコンテンツ --- */
+    .main-content {
+      margin-left: 260px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-header {
+      background-color: #fff;
+      padding: 20px 30px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .demo-banner {
+      background-color: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+      padding: 5px 15px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .content-body {
+      padding: 30px;
+    }
+
+    /* --- タブの表示制御 --- */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .admin-only {
+      display: none;
+    }
+
+    /* --- コンポーネント --- */
+    .action-bar {
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .card {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 10px;
+    }
+
+    .card-date {
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .card-body {
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    .card-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    /* --- スケジュール用レイアウト --- */
+    .schedule-card {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 20px;
+    }
+
+    .schedule-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 15px;
+    }
+
+    .schedule-details {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .schedule-date-box {
+      background-color: #f0fdf4;
+      border: 2px solid #bbf7d0;
+      color: #166534;
+      width: 70px;
+      height: 70px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .schedule-date-box .month {
+      font-size: 0.8rem;
+    }
+
+    .schedule-date-box .day {
+      font-size: 1.5rem;
+    }
+
+    .schedule-info h3 {
+      margin-bottom: 5px;
+    }
+
+    .schedule-info p {
+      font-size: 0.9rem;
+      color: #475569;
+      margin-bottom: 2px;
+    }
+
+    .text-muted {
+      font-size: 0.85rem !important;
+      color: #94a3b8 !important;
+    }
+
+    /* 名簿と入力フォームの並び */
+    .schedule-bottom-row {
+      display: flex;
+      gap: 30px;
+    }
+
+    /* 名簿を2つ内包するコンテナ */
+    .roster-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* メンバー名簿エリア */
+    .attendance-roster {
+      background-color: #f8fafc;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .attendance-roster h4 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #475569;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 3px;
+      text-align: left;
+    }
+
+    .roster-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    .roster-name {
+      font-weight: bold;
+      min-width: 80px;
+      text-align: left;
+    }
+
+    .roster-comment {
+      color: #64748b;
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* 出欠登録フォーム */
+    .attendance-form-box {
+      width: 340px;
+      background-color: #f1f5f9;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      text-align: center;
+    }
+
+    .attendance-form-box h4 {
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      color: #334155;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .attendance-form-box .form-input {
+      width: 100%;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.85rem;
+      background-color: #fff;
+      text-align: center;
+    }
+
+    /* ラジオボタンのコンテナ共通 */
+    .status-radio-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      background-color: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    .status-radio-container label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .status-radio-container input[type="radio"] {
+      cursor: pointer;
+      width: 15px;
+      height: 15px;
+    }
+
+    .type-label {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: #475569;
+    }
+
+    /* --- ステータスバッジ --- */
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .status-badge.出席 {
+      background-color: #22c55e;
+    }
+
+    .status-badge.未定 {
+      background-color: #eab308;
+    }
+
+    .status-badge.欠席 {
+      background-color: #ef4444;
+    }
+
+    /* --- ボタン共通スタイル --- */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      border: none;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 0.8rem;
+    }
+
+    .btn-block {
+      width: 100%;
+      margin-top: 5px;
+    }
+
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background-color: #64748b;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #475569;
+    }
+
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+      .dashboard-container {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .schedule-top-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .schedule-bottom-row {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .attendance-form-box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="dashboard-container">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div style="text-align: center;">
+          <h3>五福フレッシュテニスクラブ</h3>
+          <h3>ポータルサイト</h3>
+        </div>
+      </div>
+      <nav class="sidebar-menu">
+        <button class="menu-item active" data-tab="announcements">
+          <span class="icon">📢</span> お知らせ
+        </button>
+        <button class="menu-item" data-tab="schedules">
+          <span class="icon">📅</span> 練習スケジュール
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <p class="user-name" id="current-user-name">読み込み中...</p>
+          <span class="role-badge" id="user-role-badge">---</span>
+        </div>
+        <button id="auth-toggle-btn" class="logout-btn">管理者認証</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <h1 id="page-title">お知らせ</h1>
+        <div id="mode-indicator" class="demo-banner" style="display:none;">⚠️ デモモード駆動中</div>
+      </header>
+
+      <div class="content-body">
+        <section id="tab-announcements" class="tab-content active">
+          <div class="action-bar admin-only">
+            <button class="btn btn-primary" id="add-announcement-btn">➕ 新規お知らせ投稿</button>
+          </div>
+          <div class="announcement-list" id="announcement-container"></div>
+        </section>
+
+        <section id="tab-schedules" class="tab-content">
+          <div class="action-bar admin-only">
+            <button class="btn btn-primary" id="add-schedule-btn">➕ 新規スケジュール追加</button>
+          </div>
+          <div class="schedule-list" id="schedule-container"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    // --- Firebase設定 ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const ADMIN_PASSWORD = "GofukuTennis";
+    const isDemoMode = firebaseConfig.apiKey === "YOUR_API_KEY";
+    let db, auth;
+
+    let currentUser = { uid: "test-user-123", name: "", role: "member" };
+
+    // --- デモ用データのデフォルト定義 ---
+    const defaultAnnouncements = [
+      { id: "a1", title: "フレッシュテニス大会開催のお知らせ", content: "7月に市民体育館にて交流大会を行います。奮ってご参加ください！", createdAt: "2026/05/20" },
+      { id: "a2", title: "6月の練習日程について", content: "基本は毎週金曜日ですが、体育館の都合により12日のみ木曜日に変更となります。", createdAt: "2026/05/15" }
+    ];
+
+    const defaultSchedules = [
+      {
+        id: "s1",
+        title: "週末定期練習会",
+        month: "6",
+        day: "5",
+        time: "19:00 〜 21:00",
+        location: "富山市体育館 コートA",
+        note: "体験参加者1名あり",
+        attendance: {}
+      }
+    ];
+
+    // ローカルストレージにデータがあればそれを使い、なければデフォルト値をセット
+    let demoAnnouncements = JSON.parse(localStorage.getItem("ft_demo_announcements")) || defaultAnnouncements;
+    let demoSchedules = JSON.parse(localStorage.getItem("ft_demo_schedules")) || defaultSchedules;
+
+    if (!isDemoMode) {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
+      const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+      const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initApp();
+      setupTabSystem();
+    });
+
+    async function initApp() {
+      if (isDemoMode) {
+        document.getElementById("mode-indicator").style.display = "block";
+        setupAdminAuthTrigger();
+        renderUI(currentUser);
+      } else {
+        setupAdminAuthTrigger();
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              currentUser = { uid: user.uid, name: data.name || "名無しメンバー", role: "member" };
+              renderUI(currentUser);
+            }
+          } else {
+            window.location.href = "login.html";
+          }
+        });
+      }
+    }
+
+    function setupAdminAuthTrigger() {
+      const authBtn = document.getElementById("auth-toggle-btn");
+      authBtn.addEventListener("click", () => {
+        if (currentUser.role === "member") {
+          const inputPassword = prompt("管理者のパスワードを入力してください:");
+          if (inputPassword === ADMIN_PASSWORD) {
+            currentUser.role = "admin";
+            currentUser.name = "";
+            alert("認証に成功しました。管理者権限を付与します。");
+            renderUI(currentUser);
+          } else if (inputPassword !== null) {
+            alert("パスワードが正しくありません。");
+          }
+        } else {
+          currentUser.role = "member";
+          currentUser.name = "";
+          alert("一般メンバーモードに戻りました。");
+          renderUI(currentUser);
+        }
+      });
+    }
+
+    function renderUI(user) {
+      document.getElementById("current-user-name").textContent = user.name;
+      const badge = document.getElementById("user-role-badge");
+      const authBtn = document.getElementById("auth-toggle-btn");
+
+      if (user.role === "admin") {
+        badge.textContent = "管理者";
+        badge.className = "role-badge admin";
+        authBtn.textContent = "一般モードへ";
+        authBtn.classList.add("is-admin");
+      } else {
+        badge.textContent = "メンバー";
+        badge.className = "role-badge member";
+        authBtn.textContent = "管理者認証";
+        authBtn.classList.remove("is-admin");
+      }
+
+      const adminElements = document.querySelectorAll(".admin-only");
+      adminElements.forEach(el => {
+        el.style.display = user.role === "admin" ? "block" : "none";
+      });
+
+      loadAnnouncements();
+      loadSchedules();
+    }
+
+    function setupTabSystem() {
+      const menuItems = document.querySelectorAll('.menu-item');
+      const tabContents = document.querySelectorAll('.tab-content');
+      const pageTitle = document.getElementById('page-title');
+
+      menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+          menuItems.forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+
+          const tabId = item.getAttribute('data-tab');
+          tabContents.forEach(content => content.classList.remove('active'));
+          document.getElementById(`tab-${tabId}`).classList.add('active');
+
+          pageTitle.textContent = item.textContent.replace(/[^\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF]/g, '').trim();
+        });
+      });
+    }
+
+    // --- お知らせ機能 ---
+    async function loadAnnouncements() {
+      const container = document.getElementById("announcement-container");
+      container.innerHTML = "";
+      let items = [];
+
+      if (isDemoMode) {
+        items = demoAnnouncements;
+      } else {
+        const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          items.push({ id: doc.id, ...data, createdAt: data.createdAt?.toDate().toLocaleDateString() || "" });
+        });
+      }
+
+      items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-header">
+            <h3 id="title-text-${item.id}">${item.title}</h3>
+            <span class="card-date">${item.createdAt}</span>
+          </div>
+          <p class="card-body" id="body-text-${item.id}">${item.content}</p>
+          <div class="card-actions admin-only" style="display: ${currentUser.role === 'admin' ? 'flex' : 'none'}">
+            <button class="btn btn-secondary btn-sm edit-ann-btn" data-id="${item.id}">編集</button>
+            <button class="btn btn-danger btn-sm delete-ann-btn" data-id="${item.id}">削除</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      container.querySelectorAll(".edit-ann-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => editAnnouncement(e.target.getAttribute("data-id")));
+      });
+      container.querySelectorAll(".delete-ann-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => deleteAnnouncement(e.target.getAttribute("data-id")));
+      });
+    }
+
+    document.getElementById("add-announcement-btn").addEventListener("click", async () => {
+      const title = prompt("お知らせのタイトルを入力してください:");
+      const content = prompt("お知らせの本文を入力してください:");
+      if (!title || !content) return;
+
+      if (isDemoMode) {
+        demoAnnouncements.unshift({ id: "a_" + Date.now(), title, content, createdAt: new Date().toLocaleDateString() });
+        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+        loadAnnouncements();
+      } else {
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await addDoc(collection(db, "announcements"), { title, content, createdAt: serverTimestamp() });
+        loadAnnouncements();
+      }
+    });
+
+    async function editAnnouncement(id) {
+      let currentTitle = "", currentContent = "";
+      if (isDemoMode) {
+        const item = demoAnnouncements.find(a => a.id === id);
+        if (item) { currentTitle = item.title; currentContent = item.content; }
+      } else {
+        currentTitle = document.getElementById(`title-text-${id}`).textContent;
+        currentContent = document.getElementById(`body-text-${id}`).textContent;
+      }
+
+      const newTitle = prompt("新しいタイトルを入力してください:", currentTitle);
+      const newContent = prompt("新しい本文を入力してください:", currentContent);
+      if (!newTitle || !newContent) return;
+
+      if (isDemoMode) {
+        const item = demoAnnouncements.find(a => a.id === id);
+        if (item) { 
+          item.title = newTitle; 
+          item.content = newContent; 
+          localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+          loadAnnouncements(); 
+        }
+      } else {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "announcements", id), { title: newTitle, content: newContent });
+        loadAnnouncements();
+      }
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!confirm("本当にこのお知らせを削除しますか？")) return;
+      if (isDemoMode) {
+        demoAnnouncements = demoAnnouncements.filter(item => item.id !== id);
+        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+        loadAnnouncements();
+      } else {
+        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await deleteDoc(doc(db, "announcements", id));
+        loadAnnouncements();
+      }
+    }
+
+    // --- 練習スケジュール & 出欠名簿登録機能 ---
+    async function loadSchedules() {
+      const container = document.getElementById("schedule-container");
+      container.innerHTML = "";
+      let items = [];
+
+      if (isDemoMode) {
+        items = demoSchedules;
+      } else {
+        const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const q = query(collection(db, "schedules"), orderBy("date", "asc"));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const dateObj = new Date(data.date);
+          items.push({
+            id: doc.id,
+            title: data.title,
+            month: dateObj.getMonth() + 1,
+            day: dateObj.getDate(),
+            time: data.time,
+            location: data.location,
+            note: data.note,
+            attendance: data.attendance || {}
+          });
+        });
+      }
+
+      window.schedulesData = items;
+      const savedName = localStorage.getItem("ft_portal_username") || "";
+      items.forEach(item => {
+        let myData = null;
+        if (savedName && item.attendance) {
+          const myUid = Object.keys(item.attendance).find(uid => item.attendance[uid].name === savedName);
+          if (myUid) {
+            myData = item.attendance[myUid];
+          }
+        }
+
+        if (!myData) {
+          myData = { name: "", status: "出席", comment: "", type: "home" };
+        }
+        
+        let homeRosterHtml = "";
+        let guestRosterHtml = "";
+
+        Object.keys(item.attendance).forEach(uid => {
+          const record = item.attendance[uid];
+          const itemHtml = `
+            <div class="roster-item">
+              <span class="status-badge ${record.status}">${record.status}</span>
+              <span class="roster-name">${record.name}</span>
+              <span class="roster-comment">${record.comment ? '💬 ' + record.comment : ''}</span>
+            </div>
+          `;
+
+          if (record.type === "guest") {
+            guestRosterHtml += itemHtml;
+          } else {
+            homeRosterHtml += itemHtml;
+          }
+        });
+
+        if (homeRosterHtml === "") homeRosterHtml = `<p class="text-muted" style="font-size:0.85rem;">登録メンバーはいません</p>`;
+        if (guestRosterHtml === "") guestRosterHtml = `<p class="text-muted" style="font-size:0.85rem;">登録ゲストはいません</p>`;
+
+        const card = document.createElement("div");
+        card.className = "card schedule-card";
+        card.innerHTML = `
+          <div class="schedule-top-row">
+            <div class="schedule-details">
+              <div class="schedule-date-box">
+                <span class="month">${item.month}月</span>
+                <span class="day">${item.day}</span>
+              </div>
+              <div class="schedule-info">
+                <h3>${item.title}</h3>
+                <p>⏰ ${item.time}</p>
+                <p>📍 ${item.location}</p>
+                <p class="text-muted">備考: ${item.note}</p>
+              </div>
+            </div>
+            <div class="card-actions admin-only" style="display: ${currentUser.role === 'admin' ? 'block' : 'none'};">
+              <button class="btn btn-secondary btn-sm edit-sch-btn" data-id="${item.id}">編集</button>
+              <button class="btn btn-danger btn-sm delete-sch-btn" data-id="${item.id}">削除</button>
+            </div>
+          </div>
+
+          <div class="schedule-bottom-row">
+            <div class="roster-container">
+              <div class="attendance-roster">
+                <h4>ホームメンバー出欠名簿</h4>
+                ${homeRosterHtml}
+              </div>
+              <div class="attendance-roster">
+                <h4>外部ゲスト名簿</h4>
+                ${guestRosterHtml}
+              </div>
+            </div>
+
+            <div class="attendance-form-box">
+              <h4>出欠を登録・変更</h4>
+              <div class="form-group">
+                <input type="text" class="form-input" id="name-${item.id}" placeholder="名前を入力" value="${myData.name}">
+              </div>
+              
+              <div class="form-group status-radio-container">
+                <label>
+                  <input type="radio" name="status-${item.id}" value="出席" ${myData.status === '出席' || myData.status === '' ? 'checked' : ''}>
+                  <span class="status-badge 出席">出席</span>
+                </label>
+                <label>
+                  <input type="radio" name="status-${item.id}" value="未定" ${myData.status === '未定' ? 'checked' : ''}>
+                  <span class="status-badge 未定">未定</span>
+                </label>
+                <label>
+                  <input type="radio" name="status-${item.id}" value="欠席" ${myData.status === '欠席' ? 'checked' : ''}>
+                  <span class="status-badge 欠席">欠席</span>
+                </label>
+              </div>
+
+              <div class="form-group status-radio-container">
+                <label>
+                  <input type="radio" name="type-${item.id}" value="home" ${myData.type === 'home' || !myData.type ? 'checked' : ''}>
+                  <span class="type-label">ホーム</span>
+                </label>
+                <label>
+                  <input type="radio" name="type-${item.id}" value="guest" ${myData.type === 'guest' ? 'checked' : ''}>
+                  <span class="type-label">外部ゲスト</span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <input type="text" class="form-input" id="comment-${item.id}" placeholder="備考(遅刻、早退等)" value="${myData.comment}">
+              </div>
+              <button class="btn btn-primary btn-sm btn-block submit-att-btn" data-id="${item.id}">登録する</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      // イベントリスナー
+      container.querySelectorAll(".submit-att-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const id = e.target.getAttribute("data-id");
+          const name = document.getElementById(`name-${id}`).value.trim();
+
+          const checkedRadio = document.querySelector(`input[name="status-${id}"]:checked`);
+          const status = checkedRadio ? checkedRadio.value : "出席";
+
+          const checkedTypeRadio = document.querySelector(`input[name="type-${id}"]:checked`);
+          const type = checkedTypeRadio ? checkedTypeRadio.value : "home";
+
+          const comment = document.getElementById(`comment-${id}`).value.trim();
+
+          if (!name) { alert("名前を入力してください。"); return; }
+
+          localStorage.setItem("ft_portal_username", name);
+
+          let targetUid = currentUser.uid;
+          const currentSchedule = window.schedulesData.find(s => s.id === id);
+
+          if (currentSchedule && currentSchedule.attendance) {
+            const existingUid = Object.keys(currentSchedule.attendance).find(
+              uid => currentSchedule.attendance[uid].name === name
+            );
+
+            if (existingUid) {
+              targetUid = existingUid;
+            } else {
+              targetUid = "user_" + Date.now();
+            }
+          }
+
+          registerAttendance(id, targetUid, name, status, comment, type);
+        });
+      });
+
+      container.querySelectorAll(".edit-sch-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => editSchedule(e.target.getAttribute("data-id")));
+      });
+
+      container.querySelectorAll(".delete-sch-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => deleteSchedule(e.target.getAttribute("data-id")));
+      });
+    }
+
+    async function editSchedule(id) {
+      const item = window.schedulesData.find(s => s.id === id);
+      if (!item) return;
+
+      const newTitle = prompt("練習名を入力してください:", item.title);
+      const newDateStr = prompt("日付を入力してください（例: 6/20）:", `${item.month}/${item.day}`);
+      const newTime = prompt("時間を入力してください:", item.time);
+      const newLocation = prompt("場所を入力してください:", item.location);
+      const newNote = prompt("備考を入力してください:", item.note);
+
+      if (!newTitle || !newDateStr) return;
+      const [month, day] = newDateStr.split("/");
+
+      if (isDemoMode) {
+        item.title = newTitle;
+        item.month = month;
+        item.day = day;
+        item.time = newTime;
+        item.location = newLocation;
+        item.note = newNote;
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        alert("スケジュールを更新しました（デモ）");
+        loadSchedules();
+      } else {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const currentYear = new Date().getFullYear();
+        const ISOdate = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${newTime.split(" ")[0] || "00:00"}:00`;
+        await updateDoc(doc(db, "schedules", id), {
+          title: newTitle,
+          date: ISOdate,
+          time: newTime,
+          location: newLocation,
+          note: newNote
+        });
+        alert("スケジュールを更新しました");
+        loadSchedules();
+      }
+    }
+
+    async function registerAttendance(scheduleId, targetUid, name, status, comment, type) {
+      if (isDemoMode) {
+        const schedule = demoSchedules.find(s => s.id === scheduleId);
+        if (schedule) {
+          schedule.attendance[targetUid] = { name, status, comment, type };
+          localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+          loadSchedules();
+        }
+      } else {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const scheduleRef = doc(db, "schedules", scheduleId);
+        await updateDoc(scheduleRef, {
+          [`attendance.${targetUid}`]: { name, status, comment, type }
+        });
+        loadSchedules();
+      }
+    }
+
+    document.getElementById("add-schedule-btn").addEventListener("click", async () => {
+      const title = prompt("練習名を入力してください（例：週末定期練習会）:");
+      const dateStr = prompt("日付を入力してください（例: 6/20）:");
+      const time = prompt("時間を入力してください（例: 19:00 〜 21:00）:");
+      const location = prompt("場所を入力してください:");
+      const note = prompt("備考を入力してください:");
+      if (!title || !dateStr) return;
+
+      const [month, day] = dateStr.split("/");
+
+      if (isDemoMode) {
+        demoSchedules.push({ id: "s_" + Date.now(), title, month, day, time, location, note, attendance: {} });
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        loadSchedules();
+      } else {
+        const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const currentYear = new Date().getFullYear();
+        const ISOdate = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time.split(" ")[0] || "00:00"}:00`;
+        await addDoc(collection(db, "schedules"), {
+          title,
+          date: ISOdate,
+          time,
+          location,
+          note,
+          attendance: {}
+        });
+        loadSchedules();
+      }
+    });
+
+    async function deleteSchedule(id) {
+      if (!confirm("本当にこのスケジュールを削除しますか？")) return;
+      if (isDemoMode) {
+        demoSchedules = demoSchedules.filter(item => item.id !== id);
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        loadSchedules();
+      } else {
+        const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await deleteDoc(doc(db, "schedules", id));
+        loadSchedules();
+      }
+    }
+  </script>
+</body>
+
+</html>
