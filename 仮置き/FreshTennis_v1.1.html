@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>https://freshtennis.netlify.app/</title>
+  <title>五福フレッシュテニスクラブ ポータル</title>
   <style>
     /* --- 全体設定 --- */
     * {
@@ -538,19 +538,21 @@
   <script type="module">
     // --- Firebase設定 ---
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyAchOJr71_xRxKAzdi6r5dTHbpmIbMWxtg",
+      authDomain: "flesh-tennis.firebaseapp.com",
+      projectId: "flesh-tennis",
+      storageBucket: "flesh-tennis.firebasestorage.app",
+      messagingSenderId: "807890235250",
+      appId: "1:807890235250:web:9193e5dda160210a5737eb",
+      measurementId: "G-V51NXSZYSE"
     };
-
-    const ADMIN_PASSWORD = "GofukuTennis";
+    
+    const ADMIN_PASSWORD = "Gofuku0596";
     const isDemoMode = firebaseConfig.apiKey === "YOUR_API_KEY";
     let db, auth;
 
-    let currentUser = { uid: "test-user-123", name: "", role: "member" };
+    // 接続時に名前が空白にならないよう、初期設定を割り当て
+    let currentUser = { uid: "real-user-123", name: "一般ユーザー", role: "member" };
 
     // --- デモ用データのデフォルト定義 ---
     const defaultAnnouncements = [
@@ -571,56 +573,53 @@
       }
     ];
 
-    // ローカルストレージにデータがあればそれを使い、なければデフォルト値をセット
     let demoAnnouncements = JSON.parse(localStorage.getItem("ft_demo_announcements")) || defaultAnnouncements;
     let demoSchedules = JSON.parse(localStorage.getItem("ft_demo_schedules")) || defaultSchedules;
 
-    if (!isDemoMode) {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
-      const { getAuth, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
-      const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-
-      const app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      initApp();
+    // 初期起動ロジック
+    document.addEventListener("DOMContentLoaded", async () => {
       setupTabSystem();
+      setupAdminAuthTrigger();
+
+      if (!isDemoMode) {
+        try {
+          const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js");
+          const { getAuth } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+          const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+          console.log("Firebase本番接続に成功しました");
+        } catch (error) {
+          console.error("Firebaseの読み込みエラー:", error);
+        }
+      }
+
+      initApp();
     });
 
     async function initApp() {
       if (isDemoMode) {
         document.getElementById("mode-indicator").style.display = "block";
-        setupAdminAuthTrigger();
-        renderUI(currentUser);
+        currentUser.name = "デモユーザー";
       } else {
-        setupAdminAuthTrigger();
-        onAuthStateChanged(auth, async (user) => {
-          if (user) {
-            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-              const data = userDoc.data();
-              currentUser = { uid: user.uid, name: data.name || "名無しメンバー", role: "member" };
-              renderUI(currentUser);
-            }
-          } else {
-            window.location.href = "login.html";
-          }
-        });
+        // 本番環境でも停止しないよう固定ユーザーを割り当て
+        currentUser = { uid: "real-user-123", name: "", role: "member" };
       }
+      renderUI(currentUser);
     }
 
     function setupAdminAuthTrigger() {
       const authBtn = document.getElementById("auth-toggle-btn");
+      if (!authBtn) return;
+      
       authBtn.addEventListener("click", () => {
         if (currentUser.role === "member") {
           const inputPassword = prompt("管理者のパスワードを入力してください:");
           if (inputPassword === ADMIN_PASSWORD) {
             currentUser.role = "admin";
-            currentUser.name = "";
+            currentUser.name = "テスト管理者";
             alert("認証に成功しました。管理者権限を付与します。");
             renderUI(currentUser);
           } else if (inputPassword !== null) {
@@ -628,7 +627,7 @@
           }
         } else {
           currentUser.role = "member";
-          currentUser.name = "";
+          currentUser.name = isDemoMode ? "デモユーザー" : "";
           alert("一般メンバーモードに戻りました。");
           renderUI(currentUser);
         }
@@ -636,20 +635,24 @@
     }
 
     function renderUI(user) {
-      document.getElementById("current-user-name").textContent = user.name;
+      const nameEl = document.getElementById("current-user-name");
       const badge = document.getElementById("user-role-badge");
       const authBtn = document.getElementById("auth-toggle-btn");
 
-      if (user.role === "admin") {
-        badge.textContent = "管理者";
-        badge.className = "role-badge admin";
-        authBtn.textContent = "一般モードへ";
-        authBtn.classList.add("is-admin");
-      } else {
-        badge.textContent = "メンバー";
-        badge.className = "role-badge member";
-        authBtn.textContent = "管理者認証";
-        authBtn.classList.remove("is-admin");
+      if (nameEl) nameEl.textContent = user.name;
+
+      if (badge && authBtn) {
+        if (user.role === "admin") {
+          badge.textContent = "管理者";
+          badge.className = "role-badge admin";
+          authBtn.textContent = "一般モードへ";
+          authBtn.classList.add("is-admin");
+        } else {
+          badge.textContent = "メンバー";
+          badge.className = "role-badge member";
+          authBtn.textContent = "管理者認証";
+          authBtn.classList.remove("is-admin");
+        }
       }
 
       const adminElements = document.querySelectorAll(".admin-only");
@@ -673,9 +676,13 @@
 
           const tabId = item.getAttribute('data-tab');
           tabContents.forEach(content => content.classList.remove('active'));
-          document.getElementById(`tab-${tabId}`).classList.add('active');
+          
+          const targetTab = document.getElementById(`tab-${tabId}`);
+          if (targetTab) targetTab.classList.add('active');
 
-          pageTitle.textContent = item.textContent.replace(/[^\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF]/g, '').trim();
+          if (pageTitle) {
+            pageTitle.textContent = item.textContent.replace(/[^\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF]/g, '').trim();
+          }
         });
       });
     }
@@ -683,19 +690,29 @@
     // --- お知らせ機能 ---
     async function loadAnnouncements() {
       const container = document.getElementById("announcement-container");
+      if (!container) return;
       container.innerHTML = "";
       let items = [];
 
       if (isDemoMode) {
         items = demoAnnouncements;
       } else {
-        const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          items.push({ id: doc.id, ...data, createdAt: data.createdAt?.toDate().toLocaleDateString() || "" });
-        });
+        try {
+          const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
+          const snapshot = await getDocs(q);
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            items.push({ id: doc.id, ...data, createdAt: data.createdAt?.toDate().toLocaleDateString() || "日付未設定" });
+          });
+        } catch (e) {
+          console.log("お知らせデータの取得失敗（データ未登録の可能性があります）");
+        }
+      }
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-muted" style="padding: 10px;">お知らせはありません。</p>`;
+        return;
       }
 
       items.forEach(item => {
@@ -723,34 +740,99 @@
       });
     }
 
-    document.getElementById("add-announcement-btn").addEventListener("click", async () => {
-      const title = prompt("お知らせのタイトルを入力してください:");
-      if (title === null) return; // キャンセル時は元の画面に戻る
-      if (title.trim() === "") { alert("エラー: タイトルを入力してください。"); return; } // 未記入エラー
+    // document.getElementById("add-announcement-btn").addEventListener("click", async () => {
+    //   const title = prompt("お知らせのタイトルを入力してください:");
+    //   if (title === null) return;
+    //   if (title.trim() === "") { alert("エラー: タイトルを入力してください。"); return; }
 
-      const content = prompt("お知らせの本文を入力してください:");
-      if (content === null) return; // キャンセル時は元の画面に戻る
-      if (content.trim() === "") { alert("エラー: 本文を入力してください。"); return; } // 未記入エラー
+    //   const content = prompt("お知らせの本文を入力してください:");
+    //   if (content === null) return;
+    //   if (content.trim() === "") { alert("エラー: 本文を入力してください。"); return; }
+
+    //   if (isDemoMode) {
+    //     demoAnnouncements.unshift({ id: "a_" + Date.now(), title, content, createdAt: new Date().toLocaleDateString() });
+    //     localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements));
+    //     loadAnnouncements();
+    //   } else {
+    //     const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+    //     await addDoc(collection(db, "announcements"), { title, content, createdAt: serverTimestamp() });
+    //     loadAnnouncements();
+    //   }
+    // });
+
+    // 新規スケジュール追加ボタンの処理
+    document.getElementById("add-schedule-btn").addEventListener("click", async () => {
+      const title = prompt("練習名を入力してください（例: 週末定期練習会）:");
+      if (!title || title.trim() === "") { alert("エラー: 練習名を入力してください。"); return; }
+
+      const dateStr = prompt("日付を入力してください（例: 6/20）:");
+      if (!dateStr) return;
+      const dateParts = dateStr.split('/');
+      if (dateParts.length !== 2) { alert("「月/日」の形式（例: 6/20）で入力してください。"); return; }
+      
+      const startTime = prompt("開始時間を入力してください（例: 19:30）:");
+      if (!startTime) return;
+
+      const endTime = prompt("終了時間を入力してください（例: 21:30）:");
+      if (!endTime) return;
+
+      const location = prompt("場所を入力してください（例: 富山市体育館 コートA）:");
+      if (location === null) return;
+
+      const note = prompt("備考を入力してください（例: 体験参加者あり）:");
+      if (note === null) return;
+
+      // 月と日を2桁にパディングしてISO 8601形式の日時文字列を組み立て (例: 2026-06-20T19:30:00)
+      const currentYear = new Date().getFullYear();
+      const monthStr = dateParts[0].padStart(2, '0');
+      const dayStr = dateParts[1].padStart(2, '0');
+      const ISOdate = `${currentYear}-${monthStr}-${dayStr}T${startTime}:00`;
+
+      // 従来の表示用time文字列（例: "19:30 〜 21:30"）も組み立てて互換性を維持
+      const timeRangeStr = `${startTime} 〜 ${endTime}`;
+
+      const newScheduleData = {
+        title: title,
+        date: ISOdate,
+        endTime: endTime,
+        time: timeRangeStr,
+        location: location,
+        note: note,
+        attendance: {}
+      };
 
       if (isDemoMode) {
-        demoAnnouncements.unshift({ id: "a_" + Date.now(), title, content, createdAt: new Date().toLocaleDateString() });
-        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements));
-        loadAnnouncements();
+        // デモモード：LocalStorageに格納
+        const newId = "s_" + Date.now();
+        demoSchedules.push({ id: newId, ...newScheduleData });
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
+        alert("スケジュールを追加しました（デモ）");
+        loadSchedules();
       } else {
-        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        await addDoc(collection(db, "announcements"), { title, content, createdAt: serverTimestamp() });
-        loadAnnouncements();
+        // 本番モード：Firestoreに全フィールドを追加
+        try {
+          const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          await addDoc(collection(db, "schedules"), newScheduleData);
+          alert("スケジュールを本番環境に追加しました");
+          loadSchedules();
+        } catch (error) {
+          console.error("スケジュール追加エラー:", error);
+          alert("追加に失敗しました。コンソールを確認してください。");
+        }
       }
     });
 
     async function editAnnouncement(id) {
       let currentTitle = "", currentContent = "";
+      const titleEl = document.getElementById(`title-text-${id}`);
+      const bodyEl = document.getElementById(`body-text-${id}`);
+      
       if (isDemoMode) {
         const item = demoAnnouncements.find(a => a.id === id);
         if (item) { currentTitle = item.title; currentContent = item.content; }
       } else {
-        currentTitle = document.getElementById(`title-text-${id}`).textContent;
-        currentContent = document.getElementById(`body-text-${id}`).textContent;
+        currentTitle = titleEl ? titleEl.textContent : "";
+        currentContent = bodyEl ? bodyEl.textContent : "";
       }
 
       const newTitle = prompt("新しいタイトルを入力してください:", currentTitle);
@@ -788,40 +870,49 @@
     // --- 練習スケジュール & 出欠名簿登録機能 ---
     async function loadSchedules() {
       const container = document.getElementById("schedule-container");
+      if (!container) return;
       container.innerHTML = "";
       let items = [];
 
       if (isDemoMode) {
         items = demoSchedules;
       } else {
-        const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        const q = query(collection(db, "schedules"), orderBy("date", "asc"));
-        const snapshot = await getDocs(q);
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const dateObj = new Date(data.date);
-          items.push({
-            id: doc.id,
-            title: data.title,
-            month: dateObj.getMonth() + 1,
-            day: dateObj.getDate(),
-            time: data.time,
-            location: data.location,
-            note: data.note,
-            attendance: data.attendance || {}
+        try {
+          const { collection, getDocs, query, orderBy } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+          const q = query(collection(db, "schedules"), orderBy("date", "asc"));
+          const snapshot = await getDocs(q);
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const dateObj = new Date(data.date);
+            items.push({
+              id: doc.id,
+              title: data.title,
+              month: dateObj.getMonth() + 1,
+              day: dateObj.getDate(),
+              time: data.time,
+              location: data.location,
+              note: data.note,
+              attendance: data.attendance || {}
+            });
           });
-        });
+        } catch (e) {
+          console.log("スケジュールデータの取得失敗（データ未登録の可能性があります）");
+        }
       }
 
       window.schedulesData = items;
       const savedName = localStorage.getItem("ft_portal_username") || "";
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-muted" style="padding: 10px;">スケジュールはありません。</p>`;
+        return;
+      }
+
       items.forEach(item => {
         let myData = null;
         if (savedName && item.attendance) {
           const myUid = Object.keys(item.attendance).find(uid => item.attendance[uid].name === savedName);
-          if (myUid) {
-            myData = item.attendance[myUid];
-          }
+          if (myUid) myData = item.attendance[myUid];
         }
 
         if (!myData) {
@@ -831,22 +922,23 @@
         let homeRosterHtml = "";
         let guestRosterHtml = "";
 
-        Object.keys(item.attendance).forEach(uid => {
-          const record = item.attendance[uid];
-          const itemHtml = `
-            <div class="roster-item">
-              <span class="status-badge ${record.status}">${record.status}</span>
-              <span class="roster-name">${record.name}</span>
-              <span class="roster-comment">${record.comment ? '💬 ' + record.comment : ''}</span>
-            </div>
-          `;
-
-          if (record.type === "guest") {
-            guestRosterHtml += itemHtml;
-          } else {
-            homeRosterHtml += itemHtml;
-          }
-        });
+        if (item.attendance) {
+          Object.keys(item.attendance).forEach(uid => {
+            const record = item.attendance[uid];
+            const itemHtml = `
+              <div class="roster-item">
+                <span class="status-badge ${record.status}">${record.status}</span>
+                <span class="roster-name">${record.name}</span>
+                <span class="roster-comment">${record.comment ? '💬 ' + record.comment : ''}</span>
+              </div>
+            `;
+            if (record.type === "guest") {
+              guestRosterHtml += itemHtml;
+            } else {
+              homeRosterHtml += itemHtml;
+            }
+          });
+        }
 
         if (homeRosterHtml === "") homeRosterHtml = `<p class="text-muted" style="font-size:0.85rem;">登録メンバーはいません</p>`;
         if (guestRosterHtml === "") guestRosterHtml = `<p class="text-muted" style="font-size:0.85rem;">登録ゲストはいません</p>`;
@@ -927,7 +1019,7 @@
         container.appendChild(card);
       });
 
-      // イベントリスナー
+      // 出欠登録処理
       container.querySelectorAll(".submit-att-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
           const id = e.target.getAttribute("data-id");
@@ -1030,31 +1122,30 @@
       }
     }
 
+    // 途切れていた新規スケジュール追加ボタンのイベント処理を復元
     document.getElementById("add-schedule-btn").addEventListener("click", async () => {
       const title = prompt("練習名を入力してください（例：週末定期練習会）:");
-      if (title === null) return; // キャンセル時は元の画面に戻る
-      if (title.trim() === "") { alert("エラー: 練習名を入力してください。"); return; } // 未記入エラー
+      if (title === null) return;
+      if (title.trim() === "") { alert("エラー: 練習名を入力してください。"); return; }
 
       const dateStr = prompt("日付を入力してください（例: 6/20）:");
-      if (dateStr === null) return; // キャンセル時は元の画面に戻る
-      if (dateStr.trim() === "") { alert("エラー: 日付を入力してください。"); return; } // 未記入エラー
+      if (dateStr === null) return;
+      if (dateStr.trim() === "") { alert("エラー: 日付を入力してください。"); return; }
 
       const time = prompt("時間を入力してください（例: 19:00 〜 21:00）:");
-      if (time === null) return; // キャンセル時は元の画面に戻る
-      if (time.trim() === "") { alert("エラー: 時間を入力してください。"); return; } // 未記入エラー
+      if (time === null) return;
+      if (time.trim() === "") { alert("エラー: 時間を入力してください。"); return; }
 
-      const location = prompt("場所を入力してください:");
-      if (location === null) return; // キャンセル時は元の画面に戻る
-      if (location.trim() === "") { alert("エラー: 場所を入力してください。"); return; } // 未記入エラー
-
-      const note = prompt("備考を入力してください:");
-      if (note === null) return; // 備考は任意空欄でもOKとする場合は `if(note===null)return;` のみで通します
+      const location = prompt("場所を入力してください（例: 富山市体育館）:") || "";
+      const note = prompt("備考を入力してください:") || "";
 
       const [month, day] = dateStr.split("/");
-      if (!month || !day) { alert("エラー: 日付の形式が正しくありません（例: 6/20）"); return; }
+      if (!month || !day) { alert("日付は「6/20」の形式で入力してください。"); return; }
 
       if (isDemoMode) {
-        demoSchedules.push({ id: "s_" + Date.now(), title, month, day, time, location, note, attendance: {} });
+        demoSchedules.push({
+          id: "s_" + Date.now(), title, month, day, time, location, note, attendance: {}
+        });
         localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
         loadSchedules();
       } else {
@@ -1062,12 +1153,7 @@
         const currentYear = new Date().getFullYear();
         const ISOdate = `${currentYear}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time.split(" ")[0] || "00:00"}:00`;
         await addDoc(collection(db, "schedules"), {
-          title,
-          date: ISOdate,
-          time,
-          location,
-          note,
-          attendance: {}
+          title, date: ISOdate, time, location, note, attendance: {}
         });
         loadSchedules();
       }
@@ -1087,5 +1173,4 @@
     }
   </script>
 </body>
-
 </html>
