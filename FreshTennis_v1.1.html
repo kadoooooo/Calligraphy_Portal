@@ -725,12 +725,16 @@
 
     document.getElementById("add-announcement-btn").addEventListener("click", async () => {
       const title = prompt("お知らせのタイトルを入力してください:");
+      if (title === null) return; // キャンセル時は元の画面に戻る
+      if (title.trim() === "") { alert("エラー: タイトルを入力してください。"); return; } // 未記入エラー
+
       const content = prompt("お知らせの本文を入力してください:");
-      if (!title || !content) return;
+      if (content === null) return; // キャンセル時は元の画面に戻る
+      if (content.trim() === "") { alert("エラー: 本文を入力してください。"); return; } // 未記入エラー
 
       if (isDemoMode) {
         demoAnnouncements.unshift({ id: "a_" + Date.now(), title, content, createdAt: new Date().toLocaleDateString() });
-        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements));
         loadAnnouncements();
       } else {
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -758,7 +762,7 @@
         if (item) { 
           item.title = newTitle; 
           item.content = newContent; 
-          localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+          localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements));
           loadAnnouncements(); 
         }
       } else {
@@ -772,7 +776,7 @@
       if (!confirm("本当にこのお知らせを削除しますか？")) return;
       if (isDemoMode) {
         demoAnnouncements = demoAnnouncements.filter(item => item.id !== id);
-        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements)); // ★永続化保存
+        localStorage.setItem("ft_demo_announcements", JSON.stringify(demoAnnouncements));
         loadAnnouncements();
       } else {
         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -989,7 +993,7 @@
         item.time = newTime;
         item.location = newLocation;
         item.note = newNote;
-        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
         alert("スケジュールを更新しました（デモ）");
         loadSchedules();
       } else {
@@ -1013,7 +1017,7 @@
         const schedule = demoSchedules.find(s => s.id === scheduleId);
         if (schedule) {
           schedule.attendance[targetUid] = { name, status, comment, type };
-          localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+          localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
           loadSchedules();
         }
       } else {
@@ -1028,17 +1032,30 @@
 
     document.getElementById("add-schedule-btn").addEventListener("click", async () => {
       const title = prompt("練習名を入力してください（例：週末定期練習会）:");
+      if (title === null) return; // キャンセル時は元の画面に戻る
+      if (title.trim() === "") { alert("エラー: 練習名を入力してください。"); return; } // 未記入エラー
+
       const dateStr = prompt("日付を入力してください（例: 6/20）:");
+      if (dateStr === null) return; // キャンセル時は元の画面に戻る
+      if (dateStr.trim() === "") { alert("エラー: 日付を入力してください。"); return; } // 未記入エラー
+
       const time = prompt("時間を入力してください（例: 19:00 〜 21:00）:");
+      if (time === null) return; // キャンセル時は元の画面に戻る
+      if (time.trim() === "") { alert("エラー: 時間を入力してください。"); return; } // 未記入エラー
+
       const location = prompt("場所を入力してください:");
+      if (location === null) return; // キャンセル時は元の画面に戻る
+      if (location.trim() === "") { alert("エラー: 場所を入力してください。"); return; } // 未記入エラー
+
       const note = prompt("備考を入力してください:");
-      if (!title || !dateStr) return;
+      if (note === null) return; // 備考は任意空欄でもOKとする場合は `if(note===null)return;` のみで通します
 
       const [month, day] = dateStr.split("/");
+      if (!month || !day) { alert("エラー: 日付の形式が正しくありません（例: 6/20）"); return; }
 
       if (isDemoMode) {
         demoSchedules.push({ id: "s_" + Date.now(), title, month, day, time, location, note, attendance: {} });
-        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
         loadSchedules();
       } else {
         const { collection, addDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -1060,7 +1077,7 @@
       if (!confirm("本当にこのスケジュールを削除しますか？")) return;
       if (isDemoMode) {
         demoSchedules = demoSchedules.filter(item => item.id !== id);
-        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules)); // ★永続化保存
+        localStorage.setItem("ft_demo_schedules", JSON.stringify(demoSchedules));
         loadSchedules();
       } else {
         const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
