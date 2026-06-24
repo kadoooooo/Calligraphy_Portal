@@ -70,7 +70,7 @@ tabs.forEach(tab => {
 document.getElementById('login-btn').addEventListener('click', () => {
     const pass = document.getElementById('admin-password').value;
     // ※今回は簡易パスワードですが、本格運用時はFirebase Authenticationの利用を推奨します
-    if(pass === '1234') {
+    if(pass === 'shodo') {
         isAdmin = true;
         
         const badge = document.getElementById('user-role-badge');
