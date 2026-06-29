@@ -13,23 +13,39 @@
         </div>
         <div class="hero-content">
             <h1>書道教室 ポータルサイト</h1>
-            <p>スケジュールの出欠登録サイト</p>
+            <p>スケジュールの出欠登録・お知らせ</p>
         </div>
     </header>
 
     <main>
         <nav class="tab-container">
             <ul class="tabs">
-                <li class="tab active" data-target="attendance-sec">📅 出欠カレンダー</li>
+                <li class="tab active" data-target="attendance-sec">📅 出欠・カレンダー</li>
                 <li class="tab hidden admin-only" data-target="print-sec">🖨️ 印刷</li>
                 <li class="tab" data-target="admin-sec" id="admin-tab-btn">🔑 管理者認証</li>
             </ul>
         </nav>
 
         <section id="attendance-sec" class="content-sec active">
-            <h3 class="section-title">✨ 直近のお稽古日 & 出欠状況</h3>
-            <div class="schedule-list" id="attendance-schedule-list">
+            <div id="notice-board" class="card" style="margin-bottom: 20px;">
+                <h3 class="section-title">📢 教室からのお知らせ</h3>
+                <ul id="notice-list" class="notice-list"></ul>
+            </div>
+
+            <div class="calendar-wrapper card">
+                <div class="calendar-header">
+                    <button id="prev-month" class="btn outline">&lt; 前月</button>
+                    <h3 id="calendar-month-year"></h3>
+                    <button id="next-month" class="btn outline">次月 &gt;</button>
                 </div>
+                <div class="calendar-grid" id="calendar-grid"></div>
+                <p class="calendar-hint">※ 色のついている日付をタップすると、その日のスケジュールが表示されます</p>
+            </div>
+
+            <h3 id="schedule-list-title" class="section-title" style="margin-top:20px;">✨ 選択されたお稽古</h3>
+            <div class="schedule-list" id="attendance-schedule-list">
+                <p style="text-align:center; color:#666; padding: 20px;">カレンダーから日付を選択してください</p>
+            </div>
             
             <div id="attendance-form-container" class="hidden card">
                 <h3 id="selected-schedule-title" class="form-title"></h3>
@@ -77,12 +93,10 @@
             <h2>参加者名簿の印刷</h2>
             <div class="form-group">
                 <label for="print-schedule-select">スケジュールを選択:</label>
-                <select id="print-schedule-select">
-                    </select>
+                <select id="print-schedule-select"></select>
             </div>
             <div id="print-area">
                 <h2 id="print-title" style="text-align:center; margin-bottom: 20px;">名簿</h2>
-                
                 <h3>内部塾生 出欠名簿</h3>
                 <table class="roster-table">
                     <thead>
@@ -90,7 +104,6 @@
                     </thead>
                     <tbody id="roster-internal-tbody"></tbody>
                 </table>
-
                 <h3 style="margin-top: 30px;">外部塾生 出欠名簿</h3>
                 <table class="roster-table">
                     <thead>
@@ -113,10 +126,36 @@
             </div>
 
             <div id="admin-tools-area" class="hidden">
-                <h2 id="admin-form-title">スケジュールの追加</h2>
+                <h2 style="border-bottom: 2px solid var(--primary-color); padding-bottom:5px; margin-bottom: 15px;">📢 お知らせ管理</h2>
+                <form id="notice-form" style="margin-bottom: 30px;">
+                    <input type="hidden" id="edit-notice-id">
+                    <div class="form-group">
+                        <label for="notice-date">日付:</label>
+                        <input type="date" id="notice-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="notice-title">題名:</label>
+                        <input type="text" id="notice-title" placeholder="例: 8月の特別稽古のお知らせ" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="notice-content">内容:</label>
+                        <input type="text" id="notice-content" placeholder="例: 8月15日はお盆休みのため休講となります。" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancel-notice-btn" class="btn outline hidden">キャンセル</button>
+                        <button type="submit" id="notice-submit-btn" class="btn primary">お知らせを保存</button>
+                    </div>
+                </form>
+                <div id="admin-notice-list" style="margin-bottom: 40px;"></div>
+
+                <h2 id="admin-form-title" style="border-bottom: 2px solid var(--primary-color); padding-bottom:5px; margin-bottom: 15px;">📅 スケジュールの追加</h2>
                 <form id="schedule-form" style="margin-bottom: 30px;">
                     <input type="hidden" id="edit-schedule-id">
                     
+                    <div class="form-group">
+                        <label for="schedule-title">稽古名:</label>
+                        <input type="text" id="schedule-title" placeholder="例: 定期稽古、特別練成会" required>
+                    </div>
                     <div class="form-group">
                         <label for="schedule-date">日付:</label>
                         <input type="date" id="schedule-date" required>
@@ -130,6 +169,23 @@
                         <input type="text" id="schedule-place" placeholder="例: 第1教室" required>
                     </div>
                     <div class="form-group">
+                        <label for="schedule-paper">紙の分類:</label>
+                        <select id="schedule-paper" required>
+                            <option value="">選択してください</option>
+                            <option value="半紙">半紙</option>
+                            <option value="条幅">条幅</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-teacher">担当先生:</label>
+                        <select id="schedule-teacher" required>
+                            <option value="">選択してください</option>
+                            <option value="櫻井">櫻井</option>
+                            <option value="毛利">毛利</option>
+                            <option value="高瀬">高瀬</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="schedule-limit">定員 (人数制限):</label>
                         <input type="number" id="schedule-limit" value="15" min="1" required>
                     </div>
@@ -140,16 +196,11 @@
                 </form>
 
                 <h3 class="section-title">現在のスケジュール管理</h3>
-                <div id="admin-schedule-list">
-                    </div>
+                <div id="admin-schedule-list"></div>
             </div>
         </section>
     </main>
 
-    <script src="app.js"></script>
-
-<script type="module" src="app.js"></script><script src="app.js"></script>
-
-<script type="module" src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
