@@ -28,6 +28,29 @@ let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let selectedDateStr = null;
 
+// --- 今日に近い順のソート関数 ---
+function sortSchedulesClosestToToday(schedulesArray) {
+    const today = new Date();
+    // 日本時間に合わせて今日の日付文字列を生成 (YYYY-MM-DD)
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    return [...schedulesArray].sort((a, b) => {
+        const aIsPast = a.date < todayStr;
+        const bIsPast = b.date < todayStr;
+
+        if (!aIsPast && !bIsPast) {
+            // 両方未来（今日含む）なら、今日に近い順（昇順）
+            return new Date(a.date) - new Date(b.date);
+        } else if (aIsPast && bIsPast) {
+            // 両方過去なら、今日に近い順（降順＝新しい順）
+            return new Date(b.date) - new Date(a.date);
+        } else {
+            // 未来の予定を上に、過去の予定を下に
+            return aIsPast ? 1 : -1;
+        }
+    });
+}
+
 // --- データの初期読み込み ---
 async function fetchData() {
     schedules = [];
@@ -92,6 +115,7 @@ document.getElementById('login-btn').addEventListener('click', () => {
 
         renderAdminSchedules();
         renderAdminNotices();
+        renderAttendanceSchedules(); // 管理者用の削除ボタンを表示するために再描画
     } else {
         alert('パスワードが間違っています。');
     }
@@ -108,7 +132,6 @@ function renderNotices() {
         return;
     }
     sorted.forEach(n => {
-        // 題名を追加表示
         list.innerHTML += `<li class="notice-item">
             <span class="notice-date">${n.date}</span>
             <span class="notice-title">${n.title || ''}</span>
@@ -117,12 +140,11 @@ function renderNotices() {
     });
 }
 
-// お知らせ管理 (追加・編集・削除)
 document.getElementById('notice-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const editId = document.getElementById('edit-notice-id').value;
     const date = document.getElementById('notice-date').value;
-    const title = document.getElementById('notice-title').value; // 新規追加
+    const title = document.getElementById('notice-title').value;
     const content = document.getElementById('notice-content').value;
 
     try {
@@ -147,7 +169,7 @@ function editNotice(id) {
     if (!n) return;
     document.getElementById('edit-notice-id').value = n.id;
     document.getElementById('notice-date').value = n.date;
-    document.getElementById('notice-title').value = n.title || ''; // 新規追加
+    document.getElementById('notice-title').value = n.title || '';
     document.getElementById('notice-content').value = n.content;
     document.getElementById('cancel-notice-btn').classList.remove('hidden');
     document.getElementById('notice-submit-btn').textContent = '更新を保存';
@@ -237,6 +259,20 @@ function renderCalendar() {
     }
 }
 
+// --- 名簿から個別に削除する機能（管理者用） ---
+async function deleteAttendance(id) {
+    if (confirm('この参加者を名簿から削除しますか？')) {
+        try {
+            await deleteDoc(doc(db, "attendances", id));
+            alert('名簿から削除しました。');
+            fetchData(); // データを再取得して画面を更新
+        } catch (error) {
+            console.error(error); alert('削除に失敗しました。');
+        }
+    }
+}
+window.deleteAttendance = deleteAttendance;
+
 // --- 出欠管理 (一般画面) ---
 function renderAttendanceSchedules() {
     const list = document.getElementById('attendance-schedule-list');
@@ -269,11 +305,19 @@ function renderAttendanceSchedules() {
         const d = new Date(sch.date);
         const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
 
+        // 管理者の場合、各生徒の横に削除ボタンを配置
+        const getStudentHtml = (s) => `
+            <li style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:4px 0;">
+                <span>${s.name} (${s.grade})</span>
+                ${isAdmin ? `<button class="btn danger" style="padding:2px 8px; font-size:0.75rem;" onclick="deleteAttendance('${s.id}')">削除</button>` : ''}
+            </li>
+        `;
+
         const internalHtml = internalStudents.length > 0
-            ? internalStudents.map(s => `<li>${s.name} (${s.grade})</li>`).join('')
+            ? internalStudents.map(getStudentHtml).join('')
             : '<li>なし</li>';
         const externalHtml = externalStudents.length > 0
-            ? externalStudents.map(s => `<li>${s.name} (${s.grade})</li>`).join('')
+            ? externalStudents.map(getStudentHtml).join('')
             : '<li>なし</li>';
 
         const div = document.createElement('div');
@@ -423,7 +467,9 @@ function resetAdminForm() {
 function renderAdminSchedules() {
     const list = document.getElementById('admin-schedule-list');
     list.innerHTML = '';
-    const sorted = [...schedules].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 今日に近い順のソート関数を適用
+    const sorted = sortSchedulesClosestToToday(schedules);
 
     sorted.forEach(sch => {
         const div = document.createElement('div');
@@ -456,7 +502,9 @@ async function deleteSchedule(id) {
 function updatePrintSelect() {
     const select = document.getElementById('print-schedule-select');
     select.innerHTML = '<option value="">スケジュールを選択してください</option>';
-    const sorted = [...schedules].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 今日に近い順のソート関数を適用
+    const sorted = sortSchedulesClosestToToday(schedules);
 
     sorted.forEach(sch => {
         const d = new Date(sch.date);
